@@ -16,8 +16,7 @@ Huge thanks to **zruncho** ([madmax](https://github.com/zruncho3d/madmax)) for t
 
 ## The design
 
-<!-- CAD render goes here -->
-![Ronin toolhead CAD](docs/images/ronin-cad.png)
+![Ronin toolhead CAD](img/Toolhead_Render.png)
 
 ## Status
 
