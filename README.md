@@ -1,3 +1,6 @@
+> [!WARNING]
+> At this time it is **NOT recommend to print or order parts** for this toolhead as the design is not yet finalized.
+
 # Ronin
 
 A high-performance, center-of-mass-optimized CNC toolchanger mod for the Monolith gantry.
@@ -15,7 +18,3 @@ Over time the design drifted far enough that nothing interchanges with the origi
 ## Thanks
 
 Huge thanks to **zruncho** ([madmax](https://github.com/zruncho3d/madmax)) for the help along the way. Without his input on the coupling, the magnet layout and many other details the design would look totally different today.
-
-## Status
-
-At this time it is **NOT recommend to print or order parts** for this toolhead as the design is not yet finalized.
