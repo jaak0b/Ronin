@@ -2,7 +2,7 @@
 
 A high-performance, center-of-mass-optimized CNC toolchanger mod for the Monolith gantry.
 
-Ronin swaps pre-heated hotend modules mid-print for multi-material and multi-color printing. The swap needs no extra motors: printhead XY motion does the docking and undocking, and the hotend module is held on the printhead by a magnetic kinematic coupling. Metal where stiffness matters (CNC aluminum backplate, SLM aluminum hotend mount), printed parts where it does not.
+Ronin swaps pre-heated hotend modules mid-print for multi-material and multi-color printing. The swap needs no extra motors: printhead XY motion does the docking and undocking, and the hotend module is held on the printhead by a magnetic kinematic coupling.
 
 ![Ronin toolhead CAD](img/Toolhead_Render.png)
 
