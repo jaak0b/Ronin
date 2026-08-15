@@ -18,4 +18,4 @@ Huge thanks to **zruncho** ([madmax](https://github.com/zruncho3d/madmax)) for t
 
 ## Status
 
-Work in progress. Parts are being ordered and tested; expect things to change. Nothing here should be considered final until this note goes away.
+At this time it is **NOT recommend to print or order parts** for this toolhead as the design is not yet finalized.
