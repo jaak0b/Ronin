@@ -18,3 +18,7 @@ Over time the design drifted far enough that nothing interchanges with the origi
 ## Thanks
 
 Huge thanks to **zruncho** ([madmax](https://github.com/zruncho3d/madmax)) for the help along the way. Without his input on the coupling, the magnet layout and many other details the design would look totally different today.
+
+## License
+
+Ronin is released under the [GNU General Public License v3.0](LICENSE), the same license as CxChanger, which it derives from.
