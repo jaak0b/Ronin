@@ -1,99 +1,24 @@
-# [CxChanger]
+# Ronin
 
-[CxChanger]是一种FDM3D打印多材料/多色解决方案。通过在打印打印过程中切换预热好的装载不同耗材的热端实现快速多材料打印。其目标是实现尽可能低成本且简单稳定的多材料打印，为了实现较高的适配性，热端切换只需要打印头XY轴运动就可实现，且切换结构与热端无关，可以通过修改热端固定件等实现其他热端的兼容。
-<img width="3960" height="3060" alt="打印头" src="https://github.com/user-attachments/assets/66c70b3b-5862-4e04-8ac4-0b782e6da9f5" />
+A high-performance, center-of-mass-optimized CNC toolchanger mod for the Monolith gantry.
 
-![QQ20260404-193802](https://github.com/user-attachments/assets/bb0c0aa7-5b82-490f-add7-e86a71225352)
+Ronin swaps pre-heated hotend modules mid-print for multi-material and multi-color printing. The swap needs no extra motors: printhead XY motion does the docking and undocking, and the hotend module is held on the printhead by a magnetic kinematic coupling. Metal where stiffness matters (CNC aluminum backplate, SLM aluminum hotend mount), printed parts where it does not.
 
----
+## Origins
 
-## 核心特性
-- **自动预热**：开启orcaslicer中的Ooze预防功能，会根据自己设定的预热时间提前在切换材料前插入预热命令，切换时释放旧热端并切换到待机温度然后抓取已经预热好的热端，若下一次切换的时间短于加热时间则保持温度不降温。
-- **欠驱动切换机构**：采用欠驱动设计不需要额外增加主动元件，利用打印头自身的XY轴运动与停靠坞机械交互来实现热端切换和耗材丝夹紧松开。
-- **磁吸麦克斯韦定位耦合机构**：热端模块锁定采用N52磁铁磁吸配合[麦克斯韦耦合](https://en.wikipedia.org/wiki/Kinematic_coupling)定位机构，打印头端有定位销组成的三个槽口，热端模块端有圆头销头部组成的球头。磁吸配合时实现对热端模块空间六自由度的限位，不存在过定位所以即使有加工装配误差以及磨损变形热端模块都能自适应消隙精确定位。
-- **自动喷嘴偏移量校准**:采用校准器校准每个头XYZ轴相对T0的偏移量，可以使用如[小球微动接触式喷嘴偏移量校准](https://github.com/Noisyfox/FoxChanger/tree/main/NozzleProbe)或者[无接触涡流喷嘴偏移量校准](https://oshwhub.com/cxg01/project_lbabffjk)，接触式需要清理干净喷嘴才能获得正确喷嘴偏移量，无接触可以不清理喷嘴。不需要每次打印前都校准，通常在刚装配好或者出现撞头等情况需要校准。
+Ronin started as a mod of [CxChanger](https://github.com/cx330-TXY/CxChanger) by cx330-TXY. The core idea — an underactuated hotend swap driven by printhead motion, with a magnetic kinematic coupling on the module — comes from there and still defines how Ronin works.
 
-## 硬件与软件需求
+Over time the design drifted far enough that nothing interchanges with the original anymore: coupling layout, magnet arrangement, backplate, hotend mount and the extruder placement are all new. At that point keeping the CxChanger name would have implied a compatibility that no longer exists, so it got a new one.
 
-### 硬件
-* **打印机** 原理上支持打印头具有XY移动能力的机型（如voron2.4、voron三叉戟、大鱼TT等），本开源只提供打印头和基础停靠坞设计需要根据自己机型固定装载停靠坞的铝型材和其他兼容修改。
-* **主板** 由于采用有线加热，每个热端模块具有一个加热片和热敏，可利用主板空余接口来扩展少量热端模块，若需要扩展更多热端模块需要制作[扩展板]( https://oshwhub.com/rayzark/project_qxihkkhj)来增加主板的加热棒接口和热敏接口。
+## Thanks
 
-### 软件
-* **固件** 整体热端切换通过klipper宏命令实现，若需使用喷嘴偏移量校准则需要下载[toolchange](https://github.com/viesturz/klipper-toolchanger)插件，配合自动校准宏来实现。
-* **切片软件**：采用Orcaslicer，其他切片软件可自行探索。
+Huge thanks to **zruncho** ([madmax](https://github.com/zruncho3d/madmax)) for the help along the way. Without his input on the coupling, the magnet layout and many other details the design would look totally different today.
 
-## 组成概览
+## The design
 
-### 组成部分
-- 打印头：有除了热端以外的其他部分
-- 热端模块：包含热端，接有铁氟龙管和加热片和热敏的线
-- 停靠坞：用于存放停靠的热端，可以堵住停靠热端的嘴防止漏料，以及有散热风扇给停靠的热端进行散热（无封箱的采用侧面离心风扇对所有热端进行散热、有封箱的采用每个停靠坞一个轴流风扇）。
+<!-- CAD render goes here -->
+![Ronin toolhead CAD](docs/images/ronin-cad.png)
 
-### 零件
-#### 打印版
-- 1.5×5（直径*长）圆柱销：用于构成麦克斯韦耦合定位的槽（×6）
-- 3×6（直径*长）圆头销：用于构成麦克斯韦耦合定位的球（一个热端3个）
-- 5×20（直径*长）内螺纹圆头销：装配于停靠坞上用于撑开挤出机摆臂（一个停靠坞1个）
-- 6×4（直径*厚）N52磁铁：用于吸附热端模块到打印头上和停靠坞上（一个热端3个，一个停靠坞1个，打印头3个）
-- M3×6沉头螺丝
-- M3×25螺丝
-- M3×8螺丝
-- M3×10螺丝
-- M3×12螺丝
-- M3×14螺丝
-- M3×20螺丝
-- M2.5×16螺丝
-- M2×8螺丝
-- M3×4×4热熔螺母
-- HGX挤出机齿轮组
-- 4020蜗轮风扇
-- 2510轴流风扇
-- 欧姆龙微动开关
-- 10×2（宽×厚）自粘耐热硅胶条
-#### CNC版
-见bom表
+## Status
 
-## 安装与配置指南
-
-### printer.cfg
-   Printer.cfg主体可以沿用自己以前的，参考我的printer.cfg里的格式和下面的提示修改，也可以直接用我的然后改成自己主板的引脚。
-   1. 引用 toolchange.cfg 和 calibration.cfg。
-   2. 仿照extruder1格式定义增加的热端，加热棒热敏引脚按自己主板接线来，共用E0的挤出机，其他的为虚拟挤出机。
-   3. probe采用固定微动，开始打印时热端全部停放于停靠坞中用耐高温硅胶垫堵嘴，加热到目标温度才拿出来解决初始漏料问题，不需要擦嘴，调平时未抓取热端此时微动为打印头最低点。还未支持其他调平方式，建议直接参考我的probe相关配置包括网床和调平的配置（主要是增加了调平前释放抓取的热端）。
-   4. 添加停靠坞散热风扇配置，停靠坞散热风扇和喉管冷却风扇关联的挤出机里添加所有挤出机。
-   5. 修改打印开始gcode，实现打印前自动给要使用的热端进行挤出划线。
-   6. 修改打印结束gcode，添加UNTOOL命令保证打印完自动卸载热端，让下次打印时不用自己手动取下热端。增加关闭所有热端加热命令。
-### toolchange.cfg
-   1. 添加toolchange.cfg。添加成功后仪表盘界面会出现T0、T1、T2以及、UNTOOL命令，（没调坐标先别点、会直接撞）点击T0是抓去T0，抓取T0后再点击T1坐标会自动卸载T0然后抓取T1，点击UNTOOL是卸载当前热端。
-   2. 固定停靠坞以及调整停靠坞坐标：手动把热端装到打印头上，把打印头拖动到X轴最右边，再往前拖动，然后把第一个停靠坞固定在能刚好让热端锁定螺丝穿过停靠坞大孔的位置（这个位置即为第一个停靠坞的坐标），然后取下热端，点击全部归位，再把热端装到打印头上，慢慢移动打印头到刚才找到的停靠坞位置让锁定螺丝穿过停靠坞大孔，记下此时的坐标将其填入toolchange里T0的停靠坞位置，一个停靠坞占30mm宽度，其他停靠坞坐标用等差数列得到，如有误差可自己微调每一个停靠坞的坐标。 
-   <img width="1539" height="1043" alt="image" src="https://github.com/user-attachments/assets/392c5682-040e-4cc8-8034-a8e724e259c7" />
-
-   
-   3. 正确设置坐标后，注释正常速度，解除测试速度注释，用慢速进行切换测试，（方便看到没对齐直接点急停）。
-   4. 测试速度切换正常后，注释测试速度，解除正常速度注释（可以根据自己机器情况自己测试出更为合适的速度）。
-### calibration.cfg
-   1. 下载[toolchange](https://github.com/viesturz/klipper-toolchanger)插件
-   1. 添加calibration.cfg
-   2. 归位xyz，调平完成后，固定好校准器，点击T0抓去第一个热端，移动至喷嘴尖端刚好位于校准器中心正上方距离1mm左右，记下这个时候的坐标，填入calibration.cfg里校准器坐标处，然后还需要在里面自己定义一个停靠坞范围外的安全位置，防止校准的时候撞到停靠坞里的其他热端。
-   3. 坐标设置好后输入 CALIBRATE_TOOL TOOL=_ 可以校准指定热端（需要先校准T0），输入 CALIBRATE_ALL_TOOLS 可以校准全部（需要设定好有哪些热端），校准完成会自动存储偏移量。
-### orcaslicer
-   1. 修改打印机gcode里起始和耗材丝更换gcode、设置更多挤出机(根据自己热端数填写)、设置各挤出机切换耗材时回抽量（我设置的长度2mm）。
-- 打印起始Gcode(根据自己的热端数修改)：
-```Gcode
-PRINT_START BED=[first_layer_bed_temperature] INITIAL_TOOL=[initial_tool] T0_TEMP={nozzle_temperature_initial_layer[0]} T0_USED={is_extruder_used[0]} T1_TEMP={nozzle_temperature_initial_layer[1]} T1_USED={is_extruder_used[1]} T2_TEMP={nozzle_temperature_initial_layer[2]} T2_USED={is_extruder_used[2]} T3_TEMP={nozzle_temperature_initial_layer[3]} T3_USED={is_extruder_used[3]} T4_TEMP={nozzle_temperature_initial_layer[4]} T4_USED={is_extruder_used[4]}
-```
-- 耗材更换Gcode：
-```Gcode
-M104 S{nozzle_temperature[next_extruder]} T{next_extruder}
-T{next_extruder}
-```
-   2. 工艺栏里开启擦拭塔（如果料和参数调得好，且模型不涉及快速微小挤出，可以把模型拖到停靠坞旁边关掉擦料塔尝试无擦料塔打印）和Ooze自动预热（我设置的软化温度负180，预热时间35s，根据自己热端加热速度修改）。
-
-
-## 注意事项
-- 打印件采用abs打印，4层墙，60%填充。
-- 挤出机弹簧需要拧得比常规挤出机更紧（因为为了压缩空间，力臂长度有限相同预紧力下挤出机夹紧力不如正常挤出机）。
-- 为了减少热量传导效率，用到的TZ2.0热端需要去掉固定加热块的两个螺丝，仅靠侧面顶丝固定。
-- 磁铁安装严格按图来（有的是压到底，有的是与某一面共面），装配正确应该是只有热端组件端的圆头销与背板端的圆柱销槽接触，磁铁之间有一点间隙，才能实现麦克斯韦耦合定位的自动消隙功能，可以自己晃动热端感觉有没有虚位，有虚位需要检查安装是否正确。当出现打印着精度变差的情况，需检查定位装配，容易出现磁铁没粘牢滑出与另一端的磁铁接触造成麦克斯韦耦合失效。
-- 热端组件上用来挂在停靠坞孔里的挂钩螺丝用12.9级的杯头螺丝方便磁吸到停靠坞内，304材质螺丝无法正常吸附。
+Work in progress. Parts are being ordered and tested; expect things to change. Nothing here should be considered final until this note goes away.
