@@ -8,9 +8,9 @@ Ronin swaps pre-heated hotend modules mid-print for multi-material and multi-col
 
 ## Origins
 
-Ronin started as a mod of [CxChanger](https://github.com/cx330-TXY/CxChanger) by cx330-TXY. The core idea — an underactuated hotend swap driven by printhead motion, with a magnetic kinematic coupling on the module — comes from there and still defines how Ronin works.
+Ronin started as a mod of [CxChanger](https://github.com/cx330-TXY/CxChanger) by cx330-TXY. The core idea, an underactuated hotend swap driven by printhead motion, with a magnetic kinematic coupling on the module comes from there and still defines how Ronin works.
 
-Over time the design drifted far enough that nothing interchanges with the original anymore: coupling layout, magnet arrangement, backplate, hotend mount and the extruder placement are all new. At that point keeping the CxChanger name would have implied a compatibility that no longer exists, so it got a new one.
+Over time the design drifted far enough that nothing interchanges with the original anymore: coupling layout, magnet arrangement, backplate, hotend mount and the extruder placement are all new. At that point keeping the CxChanger name would have implied a compatibility that no longer exists.
 
 ## Thanks
 
