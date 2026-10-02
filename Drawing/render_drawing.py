@@ -28,7 +28,7 @@ SW, SH = 420.0, 297.0
 CAP = 0.718                      # Helvetica cap height as a fraction of the em
 W_VIS, W_THIN, W_FRAME = 0.35, 0.18, 0.5
 AR_L, AR_W = 2.5, 0.85
-PM, DIA, TIMES = '±', 'Ø', '×'
+PM, DIA, TIMES, DEG = '±', 'Ø', '×', '°'
 TOL = PM + '0.05'
 THREAD_R = 1.5                   # M3 major radius, for the ISO thread symbol
 
@@ -39,9 +39,10 @@ _HW = [278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278
        667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556,
        333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556,
        556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584]
-_HW_EXTRA = {PM: 584, TIMES: 584, DIA: 778}
+_HW_EXTRA = {PM: 584, TIMES: 584, DIA: 778, DEG: 400}
 
 ops = []                          # PDF content stream pieces (bytes)
+TEXT_BOXES = []                   # corner lists of every text drawn, so centre lines can leave gaps
 
 
 # ---------------------------------------------------------------- primitives
@@ -128,6 +129,7 @@ def text(p, s, h=2.5, ang=0.0, anchor='middle', bold=False):
     a = math.radians(ang)
     ca, sa = math.cos(a), math.sin(a)
     x, y = p[0] + dx * ca, p[1] + dx * sa
+    TEXT_BOXES.append([(x + px * ca - py * sa, y + px * sa + py * ca) for px, py in ((0, 0), (w, 0), (w, h), (0, h))])
     raw = s.encode('cp1252').replace(b'\\', b'\\\\').replace(b'(', b'\\(').replace(b')', b'\\)')
     ops.append(('BT /%s %s Tf %s Tm (' % ('F2' if bold else 'F1', _f(size), _pts(ca, sa, -sa, ca, x, y))).encode('latin-1')
                + raw + b') Tj ET')
@@ -189,6 +191,49 @@ def leader(tip, knee, label, h=2.5, side=None):
         side = -1 if knee[0] < tip[0] else 1
     line(knee, (knee[0] + side * (text_w(label, h) + 2.0), knee[1]))
     text((knee[0] + side * 1.0, knee[1] + 0.8), label, h, 0, 'start' if side > 0 else 'end')
+
+
+def inside_box(pt, box, pad):
+    """Point inside a text box (corners counter-clockwise) grown by pad."""
+    for i in range(4):
+        a, b = box[i], box[(i + 1) % 4]
+        L = math.hypot(b[0] - a[0], b[1] - a[1]) or 1.0
+        if ((pt[0] - a[0]) * (b[1] - a[1]) - (pt[1] - a[1]) * (b[0] - a[0])) / L > pad:
+            return False
+    return True
+
+
+def center_line(p, q, dash='6 1 1 1', pad=0.8):
+    """Thin chain line p->q, left out wherever it would cross text."""
+    n = max(2, int(math.dist(p, q) / 0.2))
+    run = []
+    for i in range(n + 1):
+        pt = (p[0] + (q[0] - p[0]) * i / n, p[1] + (q[1] - p[1]) * i / n)
+        if any(inside_box(pt, b, pad) for b in TEXT_BOXES):
+            if len(run) > 1:
+                line(run[0], run[-1], W_THIN, dash)
+            run = []
+        else:
+            run.append(pt)
+    if len(run) > 1:
+        line(run[0], run[-1], W_THIN, dash)
+
+
+def angle_dim(V, vertex, a1, a2, R, label, h=2.5):
+    """Angular dimension: arc of radius R (model) about vertex from a1 to a2 (deg, counter-clockwise)."""
+    c, r = V.P(vertex), R * V.s
+    arc(c, r, a1, a2 - a1, W_THIN)
+    for a, at_end in ((a1, False), (a2, True)):
+        t = math.radians(a)
+        tangent = math.degrees(math.atan2(math.cos(t), -math.sin(t)))      # counter-clockwise direction
+        arrow((c[0] + r * math.cos(t), c[1] + r * math.sin(t)), tangent if at_end else tangent + 180)
+    am = math.radians((a1 + a2) / 2)
+    out = (math.cos(am), math.sin(am))
+    ta = readable(math.degrees(am) + 90)
+    up = (-math.sin(math.radians(ta)), math.cos(math.radians(ta)))
+    rb = r + 0.8 if up[0] * out[0] + up[1] * out[1] > 0 else r + 0.8 + h   # keep the glyphs outside the arc
+    text((c[0] + out[0] * rb, c[1] + out[1] * rb), label, h, ta)
+    return TEXT_BOXES[-1]
 
 
 # ---------------------------------------------------------------- model data
@@ -419,13 +464,53 @@ knee_v = pT[1] + 4.5
 leader(MAIN.P(tip), MAIN.P(tip[0] + (knee_v - tip[1]) / math.tan(math.radians(100)), knee_v),
        '10%s M3%s0.5-6H THRU' % (TIMES, TIMES), side=1)
 
-TAG_H = 2.2
-for c in tapped:
-    w, ht = text_w('M3', TAG_H) / MAIN.s, TAG_H / MAIN.s
+# Ø5 holes of the three Maxwell slots: H1/H2 at the bottom (left, right), H3 at the top, tagged
+# P1-P3 on the sheet. Their positions go in a table: a dimension line from H3 would run through the
+# two M3 holes beside it.
+holes5 = sorted((tuple(c['c']) for c in cyl if c['concave'] and c['full'] and near(c['d'], 5.0)),
+                key=lambda p: (p[1], p[0]))
+assert len(holes5) == 3, holes5
+H1, H2 = sorted(holes5[:2])
+H3 = holes5[2]
+ex = ((H2[0] - H1[0]) / math.dist(H1, H2), (H2[1] - H1[1]) / math.dist(H1, H2))   # table X: H1 -> H2
+ey = (-ex[1], ex[0])
+base = math.degrees(math.atan2(ex[1], ex[0]))
+
+
+def pair_mid(q):
+    pts = q['A'] + q['B']
+    return (sum(p[0] for p in pts) / 4, sum(p[1] for p in pts) / 4)
+
+
+def slot_axis_deg(q):
+    n = q['nA']
+    return math.degrees(math.atan2(n[0], -n[1])) % 180.0      # wall direction (-n_y, n_x)
+
+
+# slot angles, measured outside the part between the H1-H2 line and each slot's centre line
+ANG_R = 8.5
+slot_L, slot_R = sorted(angled, key=lambda q: pair_mid(q)[0])
+ang_L = (slot_axis_deg(slot_L) - base) % 180.0
+ang_R = (180.0 - (slot_axis_deg(slot_R) - base)) % 180.0
+axis_L, axis_R = 180.0 + base + ang_L, 360.0 + base - ang_R     # slot centre lines, pointing outwards
+for hole, a1, a2, ang in ((H1, 180.0 + base, axis_L, ang_L), (H2, axis_R, 360.0 + base, ang_R)):
+    take(angle_dim(MAIN, hole, a1, a2, ANG_R, '%s%s %s0.2%s' % (('%.1f' % ang).rstrip('0').rstrip('.'), DEG, PM, DEG)))
+
+REACH5 = ANG_R + 2.5
+cl5 = [((H1[0] - ex[0] * REACH5, H1[1] - ex[1] * REACH5), (H2[0] + ex[0] * REACH5, H2[1] + ex[1] * REACH5)),
+       (H1, point_on_circle(H1, REACH5, axis_L)), (H2, point_on_circle(H2, REACH5, axis_R))]
+for p_, q_ in cl5:                       # keep tags off these centre lines
+    n_ = int(math.dist(p_, q_) / 0.25)
+    samples += [(p_[0] + (q_[0] - p_[0]) * i / n_, p_[1] + (q_[1] - p_[1]) * i / n_) for i in range(n_ + 1)]
+
+
+def place_tag(c, r_clear, label, h, bold=False):
+    """Put a short label beside a hole where it crosses the fewest edges and no earlier text."""
+    w, ht = text_w(label, h, bold) / MAIN.s, h / MAIN.s
     best = None
     for a in (45, 135, -45, -135, 0, 180, 90, -90):
         ar = math.radians(a)
-        d = THREAD_R + 0.3 + w / 2 * abs(math.cos(ar)) + ht / 2 * abs(math.sin(ar))
+        d = r_clear + 0.3 + w / 2 * abs(math.cos(ar)) + ht / 2 * abs(math.sin(ar))
         cx, cy = c[0] + math.cos(ar) * d, c[1] + math.sin(ar) * d
         box = (cx - w / 2 - 0.15, cy - ht / 2 - 0.15, cx + w / 2 + 0.15, cy + ht / 2 + 0.15)
         score = sum(1 for x, y in samples if box[0] <= x <= box[2] and box[1] <= y <= box[3])
@@ -433,7 +518,22 @@ for c in tapped:
         if best is None or score < best[0]:
             best = (score, (cx, cy), box)
     taken.append(best[2])
-    text(MAIN.P(best[1][0], best[1][1] - ht / 2), 'M3', TAG_H)
+    text(MAIN.P(best[1][0], best[1][1] - ht / 2), label, h, bold=bold)
+
+
+TAG_H = 2.2
+for c in tapped:
+    place_tag(c, THREAD_R, 'M3', TAG_H)
+for c, lab in ((H1, 'P1'), (H2, 'P2'), (H3, 'P3')):   # P, not H: "H3" next to an "M3" mark reads alike
+    place_tag(c, 2.5, lab, 2.5, bold=True)
+
+# centre lines last, so they can leave gaps around every text drawn so far
+for p_, q_ in cl5:
+    center_line(MAIN.P(p_), MAIN.P(q_))
+for hole in (H1, H2, H3):
+    for d_ in (ey, ex) if hole is H3 else (ey,):
+        center_line(MAIN.P(hole[0] - d_[0] * 4.0, hole[1] - d_[1] * 4.0),
+                    MAIN.P(hole[0] + d_[0] * 4.0, hole[1] + d_[1] * 4.0), dash='3 0.8 0.8 0.8')
 
 # detail A marker on the main view; the letter sits in the empty bore just above the circle
 circle(MAIN.P(DET.mc), DET_R * MAIN.s, W_THIN)
@@ -474,6 +574,25 @@ for num, lines in enumerate(notes, 1):
     for s in lines:
         text((NX + 5.5, NY - 6.5 - row * 4.6), s, 2.5, 0, 'start')
         row += 1
+
+# --- Ø5 hole positions (they set the Maxwell coupling geometry, so ±0.05)
+HX, HY = 238.0, 254.0
+text((HX, HY), '%s5 HOLE POSITIONS  %s0.05 FROM P1' % (DIA, PM), 2.5, 0, 'start', bold=True)
+text((HX, HY - 3.6), 'X along P1-P2, Y towards P3', 1.8, 0, 'start')
+cols = (HX, HX + 14.0, HX + 33.0, HX + 52.0)
+grid = [HY - 6.0 - i * 5.0 for i in range(5)]
+for yy in grid:
+    line((cols[0], yy), (cols[-1], yy), W_THIN)
+for xx in cols:
+    line((xx, grid[0]), (xx, grid[-1]), W_THIN)
+rows = [('HOLE', 'X', 'Y')]
+for lab, p in (('P1', H1), ('P2', H2), ('P3', H3)):
+    d = (p[0] - H1[0], p[1] - H1[1])
+    rows.append((lab, '%.2f' % (round(d[0] * ex[0] + d[1] * ex[1], 2) + 0.0),
+                 '%.2f' % (round(d[0] * ey[0] + d[1] * ey[1], 2) + 0.0)))
+for r, cells in enumerate(rows):
+    for ci, s in enumerate(cells):
+        text(((cols[ci] + cols[ci + 1]) / 2, grid[r] - 3.6), s, 2.5, 0, 'middle', bold=(r == 0))
 
 # --- title block: material and finish live in the JLC order form, so only name, units, scale, date
 TX0, TX1, TY0, TY1 = 290.0, 410.0, 10.0, 32.0
