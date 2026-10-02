@@ -464,7 +464,7 @@ NX, NY = 238.0, 280.0
 text((NX, NY), 'NOTES', 3.5, 0, 'start', bold=True)
 # only what the JLC order form and the STEP can't carry
 notes = [
-    ['All geometry per the 3D model (STEP). Untoleranced dimensions: ISO 2768-m.'],
+    ['All geometry per the 3D model (STEP). Untoleranced dimensions: ISO 2768-mK.'],
     ['Only the 10 holes marked "M3" are threaded (M3%s0.5-6H, through).' % TIMES,
      'All other holes are plain, not threaded.'],
 ]
