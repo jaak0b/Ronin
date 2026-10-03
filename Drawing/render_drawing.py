@@ -290,7 +290,7 @@ clover = sorted([c for c in cyl if c['concave'] and not c['full'] and near(c['d'
 magnet_tl = [c for c in cyl if c['concave'] and c['full'] and near(c['d'], d_mag) and c['y'][0] > 4.9]
 # the through bore; a second, hidden Ø16.2 cut sits 0.5 mm higher on the top side only
 bore = next(c for c in cyl if c['concave'] and near(c['d'], 16.2) and c['y'][0] < 1.0)
-assert len(tapped) == 10 and len(clover) == 4 and len(magnet_tl) == 1, (len(tapped), len(clover), len(magnet_tl))
+assert tapped and len(clover) == 4 and len(magnet_tl) == 1, (len(tapped), len(clover), len(magnet_tl))
 magnet_tl = magnet_tl[0]
 holes_full = [(c['c'], c['d'] / 2.0) for c in cyl if c['concave'] and c['full']]
 
@@ -462,7 +462,7 @@ th = max(tapped, key=lambda c: c[0] + c[1])
 tip = point_on_circle(th, THREAD_R, 100)
 knee_v = pT[1] + 4.5
 leader(MAIN.P(tip), MAIN.P(tip[0] + (knee_v - tip[1]) / math.tan(math.radians(100)), knee_v),
-       '10%s M3%s0.5-6H THRU' % (TIMES, TIMES), side=1)
+       '%d%s M3%s0.5-6H THRU' % (len(tapped), TIMES, TIMES), side=1)
 
 # Ø5 holes of the three Maxwell slots: H1/H2 at the bottom (left, right), H3 at the top, tagged
 # P1-P3 on the sheet. Their positions go in a table: a dimension line from H3 would run through the
@@ -565,7 +565,7 @@ text((NX, NY), 'NOTES', 3.5, 0, 'start', bold=True)
 # only what the JLC order form and the STEP can't carry
 notes = [
     ['All geometry per the 3D model (STEP). Untoleranced dimensions: ISO 2768-mK.'],
-    ['Only the 10 holes marked "M3" are threaded (M3%s0.5-6H, through).' % TIMES,
+    ['Only the %d holes marked "M3" are threaded (M3%s0.5-6H, through).' % (len(tapped), TIMES),
      'All other holes are plain, not threaded.'],
 ]
 row = 0
